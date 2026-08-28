@@ -104,6 +104,14 @@
           </template>
 
           <div class="max-h-[calc(100vh-250px)] overflow-y-auto">
+            <ElAlert
+              v-if="isLegalConfig"
+              class="mb-4"
+              title="法律协议内容会展示给用户，请在保存前确认内容完整且已通过审核。"
+              type="warning"
+              show-icon
+              :closable="false"
+            />
             <ElForm ref="formRef" :model="formData" label-width="140px">
               <template v-for="(item, index) in formArray" :key="index">
                 <ElFormItem :label="item.name" :prop="item.key" v-show="item.display">
@@ -135,7 +143,11 @@
                     <sa-file-upload v-model="item.value" />
                   </template>
                   <template v-if="item.input_type === 'wangEditor'">
-                    <sa-editor v-model="item.value" />
+                    <sa-editor
+                      v-model="item.value"
+                      :height="isLegalConfig ? '420px' : '500px'"
+                      :placeholder="isLegalConfig ? `请输入${item.name}正文` : '请输入内容...'"
+                    />
                   </template>
                   <div class="text-gray-400 text-xs py-2">{{ item.remark }}</div>
                 </ElFormItem>
@@ -229,6 +241,7 @@
   // 配置选中行
   const selectedId = ref(0)
   const selectedRow = ref<any>({})
+  const isLegalConfig = computed(() => selectedRow.value.code === 'legal_config')
   const configSearch = ref({
     name: '',
     code: ''
