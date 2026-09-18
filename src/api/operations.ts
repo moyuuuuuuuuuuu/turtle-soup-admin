@@ -48,3 +48,41 @@ export const donationAdminApi = {
   stats: () =>
     request.get<{ supporter_count: number; total_amount: string }>({ url: '/core/donation/stats' })
 }
+
+export interface FriendLinkRow {
+  id: number
+  public_id: string
+  name: string
+  url: string
+  logo_url?: string | null
+  description?: string | null
+  reciprocal_url?: string | null
+  contact_email?: string | null
+  status: boolean
+  sort: number
+  create_time: string
+  update_time: string
+}
+
+export interface FriendLinkForm {
+  id?: number
+  name: string
+  url: string
+  logo_url?: string
+  description?: string
+  reciprocal_url?: string
+  contact_email?: string
+  status: boolean
+  sort: number
+}
+
+export const friendLinkAdminApi = {
+  list: (params: Record<string, unknown>) =>
+    request.get<{ items: FriendLinkRow[]; total: number }>({
+      url: '/core/friend-link/index',
+      params
+    }),
+  save: (data: FriendLinkForm) => request.post({ url: '/core/friend-link/save', data }),
+  update: (data: FriendLinkForm) => request.put({ url: '/core/friend-link/update', data }),
+  destroy: (ids: number[]) => request.del({ url: '/core/friend-link/destroy', data: { ids } })
+}
