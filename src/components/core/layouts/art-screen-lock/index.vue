@@ -399,8 +399,12 @@
     })
   }
 
-  const toLogin = () => {
-    userStore.logOut()
+  const toLogin = async () => {
+    try {
+      await userStore.signOut()
+    } catch {
+      // The HTTP client displays the error; keep the session for a retry.
+    }
   }
 
   const openLockScreen = () => {

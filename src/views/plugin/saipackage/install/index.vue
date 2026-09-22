@@ -403,6 +403,7 @@
 </template>
 
 <script setup lang="ts">
+  import { renderMarkdown } from '../utils/render'
   import { ref, reactive, onMounted, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import type { ColumnOption } from '@/types'
@@ -664,21 +665,6 @@
     detailVisible.value = true
   }
 
-  const renderMarkdown = (content?: string) => {
-    if (!content) return ''
-    return content
-      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/`(.+?)`/g, '<code>$1</code>')
-      .replace(/^- (.+)$/gm, '<li>$1</li>')
-      .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-      .replace(/\n/g, '<br/>')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
-  }
-
   const handleBuy = () => {
     window.open('https://saas.saithink.top/apps', '_blank')
   }
@@ -750,15 +736,15 @@
 <style lang="scss" scoped>
   .version-title {
     padding: 5px 10px;
+    font-size: 12px;
     background: var(--el-fill-color-light);
     border: 1px solid var(--el-border-color);
-    font-size: 12px;
   }
 
   .version-value {
     padding: 5px 10px;
-    border: 1px solid var(--el-border-color);
     font-size: 12px;
+    border: 1px solid var(--el-border-color);
   }
 
   .app-grid {
@@ -770,12 +756,12 @@
   }
 
   .app-card {
-    background: var(--el-bg-color);
-    border-radius: 8px;
     padding: 16px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    background: var(--el-bg-color);
     border: 1px solid var(--el-border-color);
+    border-radius: 8px;
+    transition: all 0.3s ease;
 
     &:hover {
       box-shadow: var(--el-box-shadow-light);
@@ -785,16 +771,16 @@
 
   .app-card-header {
     display: flex;
-    align-items: center;
     gap: 12px;
+    align-items: center;
     margin-bottom: 12px;
   }
 
   .app-logo {
     width: 48px;
     height: 48px;
-    border-radius: 8px;
     object-fit: cover;
+    border-radius: 8px;
   }
 
   .app-info {
@@ -823,29 +809,29 @@
   }
 
   .app-about {
-    font-size: 13px;
-    color: var(--el-text-color-regular);
-    line-height: 1.5;
-    margin-bottom: 12px;
     display: -webkit-box;
+    margin-bottom: 12px;
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--el-text-color-regular);
     -webkit-line-clamp: 2;
     line-clamp: 2;
     -webkit-box-orient: vertical;
-    overflow: hidden;
   }
 
   .app-footer {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     font-size: 12px;
     color: var(--el-text-color-secondary);
   }
 
   .app-author {
     display: flex;
-    align-items: center;
     gap: 6px;
+    align-items: center;
   }
 
   .author-avatar {
@@ -864,10 +850,10 @@
   }
 
   .detail-price {
+    margin-bottom: 16px;
     font-size: 24px;
     font-weight: 600;
     color: var(--el-color-danger);
-    margin-bottom: 16px;
 
     &.free {
       color: var(--el-color-success);
@@ -875,22 +861,22 @@
   }
 
   .detail-about {
-    font-size: 14px;
-    color: var(--el-text-color-regular);
-    line-height: 1.6;
     margin-bottom: 24px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--el-text-color-regular);
   }
 
   .desc-content {
     font-size: 14px;
-    color: var(--el-text-color-regular);
     line-height: 1.8;
+    color: var(--el-text-color-regular);
 
     :deep(code) {
-      background: var(--el-fill-color);
       padding: 2px 6px;
-      border-radius: 4px;
       font-size: 13px;
+      background: var(--el-fill-color);
+      border-radius: 4px;
     }
 
     :deep(a) {
@@ -906,19 +892,19 @@
 
   .purchased-card {
     display: flex;
-    align-items: center;
     gap: 16px;
+    align-items: center;
     padding: 16px;
     background: var(--el-bg-color);
-    border-radius: 8px;
     border: 1px solid var(--el-border-color);
+    border-radius: 8px;
   }
 
   .purchased-logo {
     width: 56px;
     height: 56px;
-    border-radius: 8px;
     object-fit: cover;
+    border-radius: 8px;
   }
 
   .purchased-info {
@@ -927,25 +913,25 @@
   }
 
   .purchased-title {
+    margin-bottom: 4px;
     font-size: 15px;
     font-weight: 600;
     color: var(--el-text-color-primary);
-    margin-bottom: 4px;
   }
 
   .purchased-version {
+    margin-bottom: 6px;
     font-size: 12px;
     color: var(--el-text-color-secondary);
-    margin-bottom: 6px;
   }
 
   .purchased-about {
+    display: -webkit-box;
+    overflow: hidden;
     font-size: 13px;
     color: var(--el-text-color-regular);
-    display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-    overflow: hidden;
   }
 
   .version-list {
@@ -956,9 +942,9 @@
 
   .version-item {
     display: flex;
+    gap: 12px;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
     padding: 12px;
     background: var(--el-fill-color-light);
     border-radius: 6px;
@@ -966,8 +952,8 @@
 
   .version-info-row {
     display: flex;
-    align-items: center;
     gap: 12px;
+    align-items: center;
   }
 
   .version-name {

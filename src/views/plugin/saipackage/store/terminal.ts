@@ -9,6 +9,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/modules/user'
+import { streamTerminal } from '../utils/terminal-stream'
 
 /** 任务状态枚举 */
 export enum TaskStatus {
@@ -46,13 +47,6 @@ export interface TerminalTask {
   extend: string
 }
 
-// 扩展 window 类型
-declare global {
-  interface Window {
-    eventSource?: EventSource
-  }
-}
-
 /**
  * 生成UUID
  */
@@ -78,18 +72,6 @@ const formatDateTime = (): string => {
     minute: '2-digit',
     second: '2-digit'
   })
-}
-
-/**
- * 构建终端 WebSocket URL
- */
-const buildTerminalUrl = (commandKey: string, uuid: string, extend: string): string => {
-  const env = import.meta.env
-  const baseURL = env.VITE_API_URL || ''
-  const userStore = useUserStore()
-  const token = userStore.accessToken
-  const terminalUrl = '/app/saipackage/index/terminal'
-  return `${baseURL}${terminalUrl}?command=${commandKey}&uuid=${uuid}&extend=${extend}&token=${token}`
 }
 
 export const useTerminalStore = defineStore(
@@ -164,54 +146,53 @@ export const useTerminalStore = defineStore(
       return false
     }
 
-    /**
-     * 根据猜测查找任务索引
-     */
-    const findTaskIdxFromGuess = (idx: number): number | false => {
-      if (!taskList.value[idx]) {
-        let taskKey = -1
-        for (let i = 0; i < taskList.value.length; i++) {
-          if (
-            taskList.value[i].status === TaskStatus.CONNECTING ||
-            taskList.value[i].status === TaskStatus.RUNNING
-          ) {
-            taskKey = i
-          }
-        }
-        return taskKey === -1 ? false : taskKey
-      }
-      return idx
-    }
+    let activeStream: AbortController | undefined
 
-    /**
-     * 启动EventSource连接
-     */
+    window.addEventListener('admin-session-ended', () => {
+      activeStream?.abort()
+      activeStream = undefined
+      taskList.value = []
+    })
+
+    /** Stream commands with a header credential; do not reconnect or replay automatically. */
     const startEventSource = (taskKey: number) => {
       const task = taskList.value[taskKey]
       if (!task) return
+      const controller = new AbortController()
+      activeStream = controller
+      let completed = false
+      const finish = () => {
+        completed = true
+        controller.abort()
+        if (activeStream === controller) activeStream = undefined
+        const idx = findTaskIdxFromUuid(task.uuid)
+        if (idx === false) return
+        taskCompleted(idx)
+        startTask()
+      }
 
-      window.eventSource = new EventSource(buildTerminalUrl(task.command, task.uuid, task.extend))
-
-      window.eventSource.onmessage = (e: MessageEvent) => {
-        try {
+      void streamTerminal({
+        baseUrl: import.meta.env.VITE_API_URL || '',
+        token: useUserStore().accessToken,
+        command: task.command,
+        uuid: task.uuid,
+        extend: task.extend,
+        signal: controller.signal,
+        credentials: import.meta.env.VITE_WITH_CREDENTIALS === 'true' ? 'include' : 'same-origin',
+        onmessage(e) {
+          if (completed || controller.signal.aborted || e.data === 'start') return
           const data = JSON.parse(e.data)
           if (!data || !data.data) return
-
           const taskIdx = findTaskIdxFromUuid(data.uuid)
-          if (taskIdx === false) return
-
+          if (taskIdx === false || data.uuid !== task.uuid) return
           if (data.data === 'exec-error') {
             setTaskStatus(taskIdx, TaskStatus.FAILED)
-            window.eventSource?.close()
-            taskCompleted(taskIdx)
-            startTask()
+            finish()
           } else if (data.data === 'exec-completed') {
-            window.eventSource?.close()
             if (taskList.value[taskIdx].status !== TaskStatus.SUCCESS) {
               setTaskStatus(taskIdx, TaskStatus.FAILED)
             }
-            taskCompleted(taskIdx)
-            startTask()
+            finish()
           } else if (data.data === 'connection-success') {
             setTaskStatus(taskIdx, TaskStatus.RUNNING)
           } else if (data.data === 'exec-success') {
@@ -219,18 +200,21 @@ export const useTerminalStore = defineStore(
           } else {
             addTaskMessage(taskIdx, data.data)
           }
-        } catch {
-          // JSON parse error
         }
-      }
-
-      window.eventSource.onerror = () => {
-        window.eventSource?.close()
-        const taskIdx = findTaskIdxFromGuess(taskKey)
-        if (taskIdx === false) return
-        setTaskStatus(taskIdx, TaskStatus.FAILED)
-        taskCompleted(taskIdx)
-      }
+      })
+        .then(() => {
+          if (!completed && !controller.signal.aborted)
+            throw new Error('Incomplete terminal stream')
+        })
+        .catch(() => {
+          if (completed || controller.signal.aborted) return
+          const idx = findTaskIdxFromUuid(task.uuid)
+          if (idx !== false) {
+            setTaskStatus(idx, TaskStatus.FAILED)
+            taskCompleted(idx)
+          }
+          if (activeStream === controller) activeStream = undefined
+        })
     }
 
     /**

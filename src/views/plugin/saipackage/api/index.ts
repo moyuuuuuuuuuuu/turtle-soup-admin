@@ -151,9 +151,9 @@ export default {
    * 获取商店用户信息
    */
   getStoreUserInfo(token: string) {
-    return request.get<StoreUser>({
+    return request.post<StoreUser>({
       url: '/tool/install/online/storeUserInfo',
-      params: { token }
+      data: { token }
     })
   },
 
@@ -161,9 +161,9 @@ export default {
    * 获取已购应用列表
    */
   getPurchasedApps(token: string) {
-    return request.get<PurchasedApp[]>({
+    return request.post<PurchasedApp[]>({
       url: '/tool/install/online/storePurchasedApps',
-      params: { token }
+      data: { token }
     })
   },
 
@@ -171,9 +171,9 @@ export default {
    * 获取应用版本列表
    */
   getAppVersions(token: string, app_id: number) {
-    return request.get<AppVersion[]>({
+    return request.post<AppVersion[]>({
       url: '/tool/install/online/storeAppVersions',
-      params: { token, app_id }
+      data: { token, app_id }
     })
   },
 

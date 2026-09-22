@@ -42,7 +42,7 @@ import { setPageTitle } from '@/utils/router'
 import { resetRouterState } from '@/router/guards/beforeEach'
 import { useMenuStore } from './menu'
 import { StorageConfig } from '@/utils/storage/storage-config'
-import { fetchClearCache } from '@/api/auth'
+import { fetchClearCache, fetchLogout } from '@/api/auth'
 
 /**
  * 用户状态管理
@@ -175,6 +175,8 @@ export const useUserStore = defineStore(
       accessToken.value = ''
       // 清空刷新令牌
       refreshToken.value = ''
+      localStorage.removeItem('storeToken')
+      window.dispatchEvent(new Event('admin-session-ended'))
       // 注意：不清空工作台标签页，等下次登录时根据用户判断
       // 移除iframe路由缓存
       sessionStorage.removeItem('iframeRoutes')
@@ -189,6 +191,12 @@ export const useUserStore = defineStore(
         name: 'Login',
         query: redirect ? { redirect } : undefined
       })
+    }
+
+    // Keep the local session on network/server failure so revocation can be retried.
+    const signOut = async () => {
+      if (accessToken.value) await fetchLogout()
+      logOut()
     }
 
     /**
@@ -241,6 +249,7 @@ export const useUserStore = defineStore(
       setToken,
       clearCache,
       logOut,
+      signOut,
       checkAndClearWorktabs
     }
   },

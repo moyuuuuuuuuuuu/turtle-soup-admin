@@ -23,6 +23,10 @@ export function fetchLogin(params: Api.Auth.LoginParams) {
   })
 }
 
+export function fetchLogout() {
+  return request.post({ url: '/core/logout' })
+}
+
 /**
  * 获取用户信息
  * @returns 用户信息

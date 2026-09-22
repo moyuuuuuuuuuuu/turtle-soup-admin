@@ -118,9 +118,11 @@
         confirmButtonText: t('common.confirm'),
         cancelButtonText: t('common.cancel'),
         customClass: 'login-out-dialog'
-      }).then(() => {
-        userStore.logOut()
       })
+        .then(() => userStore.signOut())
+        .catch(() => {
+          // Cancellation or request failure; HTTP errors are displayed by the client.
+        })
     }, 200)
   }
 

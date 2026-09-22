@@ -285,17 +285,19 @@
 
     try {
       await formRef.value.validate()
+      const data = { ...formData }
+      delete (data as Partial<typeof formData>).password_confirm
       if (props.dialogType === 'add') {
-        await api.save(formData)
+        await api.save(data)
         ElMessage.success('新增成功')
       } else {
-        await api.update(formData)
+        await api.update(data)
         ElMessage.success('修改成功')
       }
       emit('success')
       handleClose()
-    } catch (error) {
-      console.log('表单验证失败:', error)
+    } catch {
+      // Validation and HTTP clients display errors; request objects may contain passwords.
     }
   }
 </script>
