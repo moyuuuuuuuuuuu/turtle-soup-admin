@@ -15,4 +15,6 @@ pnpm dev
 - `system-manage-ui`: SaiAdmin management client (this branch)
 - `system-manage`: Webman backend, user API, WebSocket, and AI integrations
 
-SaiAdmin is licensed under the MIT license. Preserve upstream copyright and license notices.
+## License
+
+This project is licensed under the [MIT License](LICENSE). The license file retains the upstream SaiAdmin copyright notice.
